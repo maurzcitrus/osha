@@ -7,6 +7,7 @@ Created on Thu Oct 12 20:04:05 2017
 
 import pandas as pd
 import re
+import seaborn as sn
 import numpy as np
 import matplotlib.pyplot as plt
 import nltk
@@ -32,26 +33,36 @@ news.hist(column='Length',by='Cause',bins=50)
 plt.show()
 
 WNlemma = nltk.WordNetLemmatizer()
-porter = nltk.PorterStemmer()
+porter = nltk.SnowballStemmer('english')
 #X_train = news.iloc[:, [2]]
 corpus = []
-for i in range(0, 182):
-    review = re.sub('[^a-zA-Z]',' ',news['Summary Case'][i])
-    review = review.lower()
-    #review_pos = pos_tag(word_tokenize(review))
-    review = porter.stem(review)
-    review_tkn = word_tokenize(review)   
-    review_tkn =[WNlemma.lemmatize(t) for t in review_tkn]
-    review = [word for word in review_tkn if not word in set(stopwords.words('english') + ['wa'])]
-    review = ' '.join(review)
-    corpus.append(review)
+#for i in range(0, 182):
+#    review = re.sub('[^a-zA-Z]',' ',news['Summary Case'][i])
+#    review = review.lower()
+#    review = porter.stem(review)
+#    review_tkn = word_tokenize(review)   
+#    review_tkn =[WNlemma.lemmatize(t) for t in review_tkn]
+#    review = [word for word in review_tkn if not word in set(stopwords.words('english') + ['wa'])]
+#    review = ' '.join(review)
+#    corpus.append(review)
 
+newstopwords=stopwords.words("English") + ['yuhao','the','is','it','may','wa']
+
+def pre_process(text):
+    tokens = nltk.word_tokenize(text)
+    tokens=[WNlemma.lemmatize(t) for t in tokens]
+    tokens=[word for word in tokens if word not in newstopwords]
+    text_after_process=" ".join(tokens)
+    return(text_after_process)
+
+corpus = news['Summary Case'].apply(pre_process)
 
 # Creating the Bag of Words model
 from sklearn.feature_extraction.text import CountVectorizer
 cv = CountVectorizer(max_features = 810)
 X = cv.fit_transform(corpus).toarray()
-y = news.iloc[:, 0]
+#y = news.iloc[:, 0]
+y = news['Cause']
 
 from sklearn.feature_extraction.text import TfidfTransformer
 tf_transformer = TfidfTransformer(use_idf=False).fit(X)
@@ -83,6 +94,11 @@ classifier.fit(X_train, y_train)
 #classifier = DecisionTreeClassifier(criterion = 'entropy', random_state = 0)
 #classifier.fit(X_train, y_train)
 
+# Fitting SVM to the Training set
+#from sklearn.svm import SVC
+#classifier = SVC(kernel = 'linear', random_state = 0)
+#classifier.fit(X_train, y_train)
+
 # Predicting the Test set results
 y_pred = classifier.predict(X_test)
 
@@ -93,3 +109,9 @@ cm = confusion_matrix(y_test, y_pred)
 
 print(metrics.confusion_matrix(y_test, y_pred))
 print(np.mean(y_pred == y_test) )
+
+df_cm = pd.DataFrame(cm, range(8),
+                  range(8))
+#plt.figure(figsize = (10,7))
+sn.set(font_scale=1.4)#for label size
+sn.heatmap(df_cm, annot=True,annot_kws={"size": 16})# font size

@@ -50,8 +50,8 @@ def pre_process(text):
     text_after_process=" ".join(tokens)
     return(text_after_process)
     
-news['Summary Case'] = news['Summary Case'].apply(pre_process)
-
+news['Summary Case'] = (news.iloc[:, 2]).apply(pre_process)
+print(news['Summary Case'])
 
 # Splitting the dataset into the Training set and Test set
 from sklearn.cross_validation import train_test_split
